@@ -6,31 +6,43 @@ using System.Threading.Tasks;
 
 namespace multiParserTool.Services
 {
-    internal class ParserService
+    public class ParserService
     {
-        private void tets()
+        private int startIndex { get; set; }
+        private char customChar { get; set; }
+        private string path { get; set; }
+
+        public async Task<int> Menu(UIService uIService)
         {
-            int selectMenu = 0;
-            Console.WriteLine("Меню:\n0 - Удалить всё после спец символа" +
-                    "\n1 - Добавить до/после спец символа");
-            selectMenu = Convert.ToInt32(Console.ReadLine());
-            switch (selectMenu)
-            {
-                case 0:
-                    CutFile();
-                    break;
-                case 1:
-                    AddToFile();
-                    break;
-            }
+            string[] menu = { "Заполнить данные", "Вырезать текст", "Вставить текст", "В меню" };
 
-
-            Console.WriteLine("Приложение закончило свою работу!");
-            Console.ReadKey();
+            while (true)
+                switch (await Task.Run(() => uIService.ShowMenu("Parser", menu, null, null)))
+                {
+                    case 0:
+                        startIndex = 1;
+                        path = "";
+                        string[][] data = new[] { new []{ "С какой строчки начать:", startIndex.ToString()},
+                                                    new []{ "Символ:", customChar.ToString()},
+                                                    new []{ "Путь до файла:", path } };
+                        startIndex = (int)await Task.Run(() => uIService.ShowData("Settings", null, null, data));
+                        break;
+                    case 1:
+                        CutFile();
+                        break;
+                    case 2:
+                        AddToFile();
+                        break;
+                    default:
+                        return 0;
+                }
         }
 
         private static void CutFile()
         {
+            Console.Clear();
+            Console.CursorVisible = true;
+
             Console.WriteLine("С какой строчки начать?");
             int startIndex = Convert.ToInt32(Console.ReadLine());
             Console.WriteLine("До какого символа оставить текст?");
