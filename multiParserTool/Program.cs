@@ -2,11 +2,11 @@
 using multiParserTool.Services;
 
 UIService uIService = new UIService();
+ParserService parserService = new ParserService();
 
 Console.OutputEncoding = System.Text.Encoding.UTF8;
 
-string[] menu = { "Тестовое отображение заранее подготовленного текста ", "Парсер", "А теперь третья строчка, которая что-то сделает","asd", "asdasd",
-"asddd", "ddd", "assss"};
+string[] menu = { "Тестовое отображение заранее подготовленного текста ", "Парсер", "Инфа"};
 string[,] options = { { "q", "выход" } };
 
 while (true)
@@ -17,6 +17,9 @@ while (true)
             Console.ReadKey();
             break;
         case 1:
-            await new ParserService().Menu(uIService);
+            await parserService.Menu(uIService);
+            break;
+        case 2:
+            await Task.Run(() => uIService.ShowMenu("Info", new string[] { "Telegram - https://t.me/KrillDes", "В меню" }, options, null));
             break;
     }

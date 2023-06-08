@@ -9,46 +9,54 @@ namespace multiParserTool.Services
     public class ParserService
     {
         private int startIndex { get; set; }
-        private char customChar { get; set; }
+        private string customChar { get; set; }
         private string path { get; set; }
+        private int parsePosition { get; set; }
+        private string insertText { get; set; }
+
+        private string[][] data { get; set; }
+
+        public ParserService()
+        {
+            data = new[] { new []{ "С какой строчки начать:", startIndex.ToString()},
+            new []{ "Символ:", customChar}, new []{ "Путь до файла:", path }, new[]{"Парсинг до символа или после 0/1:", parsePosition.ToString() },
+            new[]{"Вставляемый текст:", insertText} };
+        }
 
         public async Task<int> Menu(UIService uIService)
         {
-            string[] menu = { "Заполнить данные", "Вырезать текст", "Вставить текст", "В меню" };
+            try
+            {
+                string[] menu = { "Настройки парсера", "Вырезать текст", "Вставить текст", "В меню" };
 
-            while (true)
-                switch (await Task.Run(() => uIService.ShowMenu("Parser", menu, null, null)))
-                {
-                    case 0:
-                        startIndex = 1;
-                        path = "";
-                        string[][] data = new[] { new []{ "С какой строчки начать:", startIndex.ToString()},
-                                                    new []{ "Символ:", customChar.ToString()},
-                                                    new []{ "Путь до файла:", path } };
-                        startIndex = (int)await Task.Run(() => uIService.ShowData("Settings", null, null, data));
-                        break;
-                    case 1:
-                        CutFile();
-                        break;
-                    case 2:
-                        AddToFile();
-                        break;
-                    default:
-                        return 0;
-                }
+                while (true)
+                    switch (await Task.Run(() => uIService.ShowMenu("Parser", menu, null, null)))
+                    {
+                        case 0:
+                            data = (string[][])await Task.Run(() => uIService.ShowData("Settings", null, null, data));
+                            break;
+                        case 1:
+                            CutFile(Convert.ToInt32(data[0][1]), Convert.ToChar(data[1][1]), data[2][1], Convert.ToInt32(data[3][1]));
+                            break;
+                        case 2:
+                            AddToFile(Convert.ToInt32(data[0][1]), data[1][1], data[2][1], Convert.ToInt32(data[3][1]), data[4][1]);
+                            break;
+                        default:
+                            return 0;
+                    }
+            }
+            catch (Exception ex)
+            {
+                Console.Clear();
+                Console.WriteLine(ex.Message);
+                Console.ReadKey();
+                return 0;
+            }
         }
 
-        private static void CutFile()
+        private void CutFile(int startIndex, char customChar, string path, int mode)
         {
             Console.Clear();
-            Console.CursorVisible = true;
-
-            Console.WriteLine("С какой строчки начать?");
-            int startIndex = Convert.ToInt32(Console.ReadLine());
-            Console.WriteLine("До какого символа оставить текст?");
-            char customChar = Convert.ToChar(Console.ReadLine());
-            Console.WriteLine("Путь до файла. Пример: C:\\Test\\inset.txt");
-            string path = Console.ReadLine();
 
             FileInfo fileInfo = new FileInfo(path);
             Console.WriteLine("Идёт чтение файла...");
@@ -56,8 +64,12 @@ namespace multiParserTool.Services
             Console.WriteLine("Файл был прочтён!");
             Console.WriteLine("Начинаю удаление ненужных данных...");
 
-            for (int i = startIndex; i < fileLines.Length; i++)
-                fileLines[i] = fileLines[i].Split(customChar)[0];
+            if (mode == 0)
+                for (int i = startIndex; i < fileLines.Length; i++)
+                    fileLines[i] = fileLines[i].Substring(0, fileLines[i].IndexOf(customChar));
+            else
+                for (int i = startIndex; i < fileLines.Length; i++)
+                    fileLines[i] = fileLines[i].Substring(fileLines[i].IndexOf(customChar) + 1);
 
             Console.WriteLine("Лишние данные отсечены!");
             Console.WriteLine("Создаю копию файла...");
@@ -65,37 +77,9 @@ namespace multiParserTool.Services
             File.WriteAllLines(fileInfo.Directory + "\\" + "cutResult-" + fileInfo.Name, fileLines);
         }
 
-        private static void AddToFile()
+        private static void AddToFile(int startIndex, string customChar, string path, int mode, string text)
         {
-            Console.WriteLine("С какой строчки начать?");
-            int startIndex = Convert.ToInt32(Console.ReadLine());
-            Console.WriteLine("Текст, который нужно вставить:");
-            string text = Console.ReadLine();
-
-            Console.WriteLine("Вставить текст до спец. символа? (0 - до символа, 1 - после символа)");
-            int mode = Convert.ToInt32(Console.ReadLine());
-
-            string customChar = string.Empty;
-            string customInsertChar = string.Empty;
-
-            switch (mode)
-            {
-                case 0:
-                    Console.WriteLine("До какого символа вставить текст (символ сохраняется)? Если символа нет, текст будет вставляться с начала строки.");
-                    customChar = Console.ReadLine();
-                    Console.WriteLine("Какой символ вставить после вставляемого текста?");
-                    customInsertChar = Console.ReadLine();
-                    break;
-                case 1:
-                    Console.WriteLine("После какого символа вставить текст (символ сохраняется)? Если символа нет, текст будет вставляться в конец строки.");
-                    customChar = Console.ReadLine();
-                    Console.WriteLine("Какой символ вставить до вставляемого текста?");
-                    customInsertChar = Console.ReadLine();
-                    break;
-            }
-
-            Console.WriteLine("Путь до файла. Пример: C:\\Test\\inset.txt");
-            string path = Console.ReadLine();
+            Console.Clear();
 
             FileInfo fileInfo = new FileInfo(path);
             Console.WriteLine("Идёт чтение файла...");
@@ -106,26 +90,44 @@ namespace multiParserTool.Services
             switch (mode)
             {
                 case 0:
-                    if (customInsertChar != "")
-                        text += customInsertChar;
-
                     for (int i = startIndex; i < fileLines.Length; i++)
-                        if (customChar != "")
-                            fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar) - 1, text);
+                        if (!string.IsNullOrEmpty(customChar))
+                            fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar), text);
                         else
                             fileLines[i] = fileLines[i].Insert(0, text);
                     break;
                 case 1:
-                    if (customInsertChar != "")
-                        text = customInsertChar + text;
-
                     for (int i = startIndex; i < fileLines.Length; i++)
-                        if (customChar != "")
-                            fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar), text);
+                        if (!string.IsNullOrEmpty(customChar))
+                            fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar) + 1, text);
                         else
                             fileLines[i] = fileLines[i].Insert(fileLines[i].Length, text);
                     break;
             }
+
+            //switch (mode)
+            //{
+            //    case 0:
+            //        if (customInsertChar != "")
+            //            text += customInsertChar;
+
+            //        for (int i = startIndex; i < fileLines.Length; i++)
+            //            if (customChar != "")
+            //                fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar) - 1, text);
+            //            else
+            //                fileLines[i] = fileLines[i].Insert(0, text);
+            //        break;
+            //    case 1:
+            //        if (customInsertChar != "")
+            //            text = customInsertChar + text;
+
+            //        for (int i = startIndex; i < fileLines.Length; i++)
+            //            if (customChar != "")
+            //                fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar), text);
+            //            else
+            //                fileLines[i] = fileLines[i].Insert(fileLines[i].Length, text);
+            //        break;
+            //}
 
             Console.WriteLine("Данные были добавлены!");
             Console.WriteLine("Создаю копию файла...");

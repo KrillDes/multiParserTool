@@ -14,6 +14,8 @@
                 else
                     switch (result)
                     {
+                        case 'c':
+                            return null;
                         case 'u':
                             Console.Clear();
                             break;
@@ -33,10 +35,10 @@
         {
             while (true)
             {
-                char result = Convert.ToChar(DrawData(title, data));
+                object result = DrawData(title, data);
 
-                if (char.IsNumber(result))
-                    return Int32.Parse(result.ToString());
+                if (result != null)
+                    return result;
                 else
                     switch (result)
                     {
@@ -46,7 +48,10 @@
                             Console.Clear();
                             Console.WriteLine("\nВыйти из приложения? (y/n)");
                             if (Console.ReadKey().KeyChar == 'y')
+                            {
+                                Console.CursorVisible = true;
                                 Environment.Exit(0);
+                            }
                             break;
                     }
 
@@ -60,8 +65,11 @@
             int cursorMinimalPosition = 2;
             int cursorMaxPosition = cursorMinimalPosition + menu.Length - 1;
             int cursorNowPosition = cursorMinimalPosition;
-            int maxLength = menu.Max(x => x.Length);
             const int menuLength = 4;
+            int maxLength = menu.Max(x => x.Length);
+
+            if (maxLength % 2 != 0)
+                maxLength++;
 
             do
             {
@@ -106,7 +114,7 @@
                 Console.CursorTop = Console.WindowHeight - 3;
                 Console.WriteLine("".PadRight(Console.WindowWidth, Convert.ToChar("\u2500")));
                 Console.CursorTop = Console.WindowHeight - 2;
-                Console.WriteLine("q - выход");
+                Console.WriteLine("q - выход" + Convert.ToChar("\u0009") + "esc - назад");
 
                 Console.SetCursorPosition(0, cursorNowPosition);
 
@@ -124,36 +132,29 @@
 
                 if (keyInfo.Key == ConsoleKey.Enter)
                     return (cursorNowPosition - cursorMinimalPosition).ToString();
+
+                if (keyInfo.Key == ConsoleKey.Escape)
+                    return "c";
             }
             while (keyInfo.KeyChar != 'q');
             return "q";
         }
 
-        private string DrawData(string title, string[][] data)
+        private string[][] DrawData(string title, string[][] data)
         {
-            //ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
-            //do
-            //{
-            //    Console.Clear();
-            //    Console.WriteLine("Тест");
-
-            //    Console.CursorTop = Console.WindowHeight - 3;
-            //    Console.WriteLine("".PadRight(Console.WindowWidth, Convert.ToChar("\u2500")));
-            //    Console.CursorTop = Console.WindowHeight - 2;
-            //    Console.WriteLine("c - назад");
-
-            //    keyInfo = Console.ReadKey();
-            //}
-
             ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
             int cursorMinimalPosition = 2;
             int cursorMaxPosition = cursorMinimalPosition + data.Length - 1;
             int cursorNowPosition = cursorMinimalPosition;
-            int maxLength = data.Max(x => x.Max(x => x.Length));
             const int menuLength = 4;
+
             do
             {
+                int maxLength = data.Max(x => string.Join("", x).Length);
                 int cursorPosition = Console.WindowWidth / 2 - maxLength / 2 - 3;
+
+                if (maxLength % 2 != 0)
+                    maxLength++;
 
                 Console.Clear();
 
@@ -178,18 +179,20 @@
 
                 foreach (string[] item in data)
                 {
-                    //TODO: Сделать грамотный вывод инфы
-                    foreach (string subItem in item)
+                    string setting = string.Empty;
+
+                    Console.CursorLeft = cursorPosition;
+                    if (cursorNowPosition == Console.GetCursorPosition().Top)
                     {
-                        Console.CursorLeft = cursorPosition;
-                        if (cursorNowPosition == Console.GetCursorPosition().Top)
-                        {
-                            Console.ForegroundColor = ConsoleColor.Black;
-                            Console.BackgroundColor = ConsoleColor.White;
-                        }
-                        Console.WriteLine(item);// "".PadLeft(1, Convert.ToChar("\u2502")) + "".PadLeft(1, ' ') + item + "".PadRight(maxLength - item.Length + 1, ' ') + "".PadRight(1, Convert.ToChar("\u2502")));
-                        Console.ResetColor();
+                        Console.ForegroundColor = ConsoleColor.Black;
+                        Console.BackgroundColor = ConsoleColor.White;
                     }
+
+                    foreach (string subItem in item)
+                        setting += subItem;
+
+                    Console.WriteLine("".PadLeft(1, Convert.ToChar("\u2502")) + "".PadLeft(1, ' ') + setting + "".PadRight(maxLength - setting.Length + 1, ' ') + "".PadRight(1, Convert.ToChar("\u2502")));
+                    Console.ResetColor();
                 }
 
                 Console.CursorLeft = cursorPosition;
@@ -198,7 +201,7 @@
                 Console.CursorTop = Console.WindowHeight - 3;
                 Console.WriteLine("".PadRight(Console.WindowWidth, Convert.ToChar("\u2500")));
                 Console.CursorTop = Console.WindowHeight - 2;
-                Console.WriteLine("c - назад");
+                Console.WriteLine("esc - назад" + Convert.ToChar("\u0009") + "bacspace - удалить");
 
                 Console.SetCursorPosition(0, cursorNowPosition);
 
@@ -210,19 +213,29 @@
 
                 if (keyInfo.Key == ConsoleKey.DownArrow)
                     if (cursorNowPosition < cursorMaxPosition)
-                    {
                         cursorNowPosition++;
-                    }
 
                 if (keyInfo.Key == ConsoleKey.Enter)
-                    return (cursorNowPosition - cursorMinimalPosition).ToString();
-            } while (keyInfo.KeyChar != 'c');
-            return "c";
+                    EdithData(Console.CursorTop += cursorMaxPosition, data[cursorNowPosition - cursorMinimalPosition]);
+
+                if (keyInfo.Key == ConsoleKey.Backspace)
+                    data[cursorNowPosition - cursorMinimalPosition][1] = string.Empty;
+
+            } while (keyInfo.Key != ConsoleKey.Escape);
+            return data;
         }
 
-        private string EdithData(string[,] data)
+        private void EdithData(int cursorTop, string[] data)
         {
-            return string.Empty;
+            Console.CursorVisible = true;
+            Console.CursorTop = cursorTop;
+            Console.WriteLine(string.Join("", data));
+            Console.Write(data[0]);
+            var userData = Console.ReadLine();
+            Console.CursorVisible = false;
+
+            if (!string.IsNullOrEmpty(userData))
+                data[1] = userData;
         }
     }
 }
