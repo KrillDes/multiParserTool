@@ -1,8 +1,22 @@
-﻿namespace multiParserTool.Services
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace multiParserTool.Services
 {
     public class UIService
     {
         private const string mainTitle = " Powered by KrillDes ";
+
+        public void Clear()
+        {
+            Console.SetCursorPosition(0, 0);
+            for (int i = 0; i < Console.WindowHeight; i++)
+            {
+                Console.SetOut(Console.Out);
+                Console.Write(new string(' ', Console.WindowWidth));
+            }
+            Console.SetCursorPosition(0, 0);
+        }
+
         public async Task<object> ShowMenu(string title, string[] menu, string[,] options, string[,] data)
         {
             while (true)
@@ -20,14 +34,12 @@
                             Console.Clear();
                             break;
                         case 'q':
-                            Console.Clear();
+                            Clear();
                             Console.WriteLine("\nВыйти из приложения? (y/n)");
-                            if (Console.ReadKey().KeyChar == 'y')
+                            if (Console.ReadKey(true).KeyChar == 'y')
                                 Environment.Exit(0);
                             break;
                     }
-
-                Console.Clear();
             }
         }
 
@@ -45,17 +57,12 @@
                         case 'c':
                             return 0;
                         case 'q':
-                            Console.Clear();
+                            Clear();
                             Console.WriteLine("\nВыйти из приложения? (y/n)");
-                            if (Console.ReadKey().KeyChar == 'y')
-                            {
-                                Console.CursorVisible = true;
+                            if (Console.ReadKey(true).KeyChar == 'y')
                                 Environment.Exit(0);
-                            }
                             break;
                     }
-
-                Console.Clear();
             }
         }
 
@@ -73,9 +80,9 @@
 
             do
             {
-                int cursorPosition = Console.WindowWidth / 2 - maxLength / 2 - 3;
+                Clear();
 
-                Console.Clear();
+                int cursorPosition = Console.WindowWidth / 2 - maxLength / 2 - 3;
 
                 if (cursorPosition <= 0)
                 {
@@ -85,7 +92,7 @@
                 }
 
                 Console.WriteLine("".PadLeft(Console.WindowWidth / 2 - mainTitle.Length / 2 - 2, Convert.ToChar("\u2500")) + Convert.ToChar("\u2524") +
-                        mainTitle + Convert.ToChar("\u251C") + "".PadRight(Console.WindowWidth / 2 - mainTitle.Length / 2 - 1, Convert.ToChar("\u2500")));
+                        mainTitle + Convert.ToChar("\u251C") + "".PadRight(Console.WindowWidth / 2 - mainTitle.Length / 2 - 2, Convert.ToChar("\u2500")));
 
                 Console.CursorLeft = cursorPosition;
                 Console.CursorVisible = false;
@@ -118,7 +125,7 @@
 
                 Console.SetCursorPosition(0, cursorNowPosition);
 
-                keyInfo = Console.ReadKey();
+                keyInfo = Console.ReadKey(true);
 
                 if (keyInfo.Key == ConsoleKey.UpArrow)
                     if (cursorNowPosition > cursorMinimalPosition)
@@ -150,13 +157,13 @@
 
             do
             {
+                Clear();
+
                 int maxLength = data.Max(x => string.Join("", x).Length);
                 int cursorPosition = Console.WindowWidth / 2 - maxLength / 2 - 3;
 
                 if (maxLength % 2 != 0)
                     maxLength++;
-
-                Console.Clear();
 
                 if (cursorPosition <= 0)
                 {
@@ -205,7 +212,7 @@
 
                 Console.SetCursorPosition(0, cursorNowPosition);
 
-                keyInfo = Console.ReadKey();
+                keyInfo = Console.ReadKey(true);
 
                 if (keyInfo.Key == ConsoleKey.UpArrow)
                     if (cursorNowPosition > cursorMinimalPosition)

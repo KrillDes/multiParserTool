@@ -74,7 +74,7 @@ namespace multiParserTool.Services
             Console.WriteLine("Лишние данные отсечены!");
             Console.WriteLine("Создаю копию файла...");
 
-            File.WriteAllLines(fileInfo.Directory + "\\" + "cutResult-" + fileInfo.Name, fileLines);
+            File.WriteAllLines(fileInfo.DirectoryName + "cutResult-" + fileInfo.Name, fileLines);
         }
 
         private static void AddToFile(int startIndex, string customChar, string path, int mode, string text)
@@ -105,34 +105,12 @@ namespace multiParserTool.Services
                     break;
             }
 
-            //switch (mode)
-            //{
-            //    case 0:
-            //        if (customInsertChar != "")
-            //            text += customInsertChar;
-
-            //        for (int i = startIndex; i < fileLines.Length; i++)
-            //            if (customChar != "")
-            //                fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar) - 1, text);
-            //            else
-            //                fileLines[i] = fileLines[i].Insert(0, text);
-            //        break;
-            //    case 1:
-            //        if (customInsertChar != "")
-            //            text = customInsertChar + text;
-
-            //        for (int i = startIndex; i < fileLines.Length; i++)
-            //            if (customChar != "")
-            //                fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar), text);
-            //            else
-            //                fileLines[i] = fileLines[i].Insert(fileLines[i].Length, text);
-            //        break;
-            //}
-
             Console.WriteLine("Данные были добавлены!");
             Console.WriteLine("Создаю копию файла...");
 
-            File.WriteAllLines(fileInfo.Directory + "\\" + "addResult-" + fileInfo.Name, fileLines);
+            var t = Path.GetDirectoryName(Path.GetFullPath(path));
+
+            File.WriteAllLines(Path.GetDirectoryName(Path.GetFullPath(path)) + "addResult-" + Path.GetFileName(path), fileLines);
         }
     }
 }
