@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace multiParserTool.Services
+﻿namespace multiParserTool.Services
 {
     public class UIService
     {
@@ -173,7 +171,7 @@ namespace multiParserTool.Services
                 }
 
                 Console.WriteLine("".PadLeft(Console.WindowWidth / 2 - mainTitle.Length / 2 - 2, Convert.ToChar("\u2500")) + Convert.ToChar("\u2524") +
-                        mainTitle + Convert.ToChar("\u251C") + "".PadRight(Console.WindowWidth / 2 - mainTitle.Length / 2 - 1, Convert.ToChar("\u2500")));
+                        mainTitle + Convert.ToChar("\u251C") + "".PadRight(Console.WindowWidth / 2 - mainTitle.Length / 2 - 2, Convert.ToChar("\u2500")));
 
                 Console.CursorLeft = cursorPosition;
                 Console.CursorVisible = false;

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Text;
 
 namespace multiParserTool.Services
 {
@@ -14,20 +10,29 @@ namespace multiParserTool.Services
         private int parsePosition { get; set; }
         private string insertText { get; set; }
 
-        private string[][] data { get; set; }
-
-        public ParserService()
+        private string[][] data
         {
-            data = new[] { new []{ "С какой строчки начать:", startIndex.ToString()},
-            new []{ "Символ:", customChar}, new []{ "Путь до файла:", path }, new[]{"Парсинг до символа или после 0/1:", parsePosition.ToString() },
-            new[]{"Вставляемый текст:", insertText} };
+            get
+            {
+                return new[] { new[] { "С какой строчки начать:", startIndex.ToString() },
+                new []{ "Символ:", customChar}, new []{ "Путь до файла:", path }, new[]{"Парсинг до символа или после 0/1:", parsePosition.ToString() },
+                 new[]{"Вставляемый текст:", insertText}};
+            }
+            set
+            {
+                startIndex = Convert.ToInt32(value[0][1]);
+                customChar = value[1][1];
+                path = value[2][1];
+                parsePosition = Convert.ToInt32(value[3][1]);
+                insertText = value[4][1];
+            }
         }
 
         public async Task<int> Menu(UIService uIService)
         {
             try
             {
-                string[] menu = { "Настройки парсера", "Вырезать текст", "Вставить текст", "В меню" };
+                string[] menu = { "Настройки парсера", "Предпросмотр результата", "Вырезать текст", "Вставить текст", "В меню" };
 
                 while (true)
                     switch (await Task.Run(() => uIService.ShowMenu("Parser", menu, null, null)))
@@ -35,11 +40,11 @@ namespace multiParserTool.Services
                         case 0:
                             data = (string[][])await Task.Run(() => uIService.ShowData("Settings", null, null, data));
                             break;
-                        case 1:
-                            CutFile(Convert.ToInt32(data[0][1]), Convert.ToChar(data[1][1]), data[2][1], Convert.ToInt32(data[3][1]));
-                            break;
                         case 2:
-                            AddToFile(Convert.ToInt32(data[0][1]), data[1][1], data[2][1], Convert.ToInt32(data[3][1]), data[4][1]);
+                            CutFile();
+                            break;
+                        case 3:
+                            AddToFile();
                             break;
                         default:
                             return 0;
@@ -54,63 +59,90 @@ namespace multiParserTool.Services
             }
         }
 
-        private void CutFile(int startIndex, char customChar, string path, int mode)
+        private void CutFile()
         {
             Console.Clear();
 
-            FileInfo fileInfo = new FileInfo(path);
-            Console.WriteLine("Идёт чтение файла...");
-            string[] fileLines = File.ReadAllLines(path);
-            Console.WriteLine("Файл был прочтён!");
-            Console.WriteLine("Начинаю удаление ненужных данных...");
+            Console.WriteLine("Подождите...");
 
-            if (mode == 0)
-                for (int i = startIndex; i < fileLines.Length; i++)
-                    fileLines[i] = fileLines[i].Substring(0, fileLines[i].IndexOf(customChar));
-            else
-                for (int i = startIndex; i < fileLines.Length; i++)
-                    fileLines[i] = fileLines[i].Substring(fileLines[i].IndexOf(customChar) + 1);
+            string readLine;
+            int progressBar = 0;
 
-            Console.WriteLine("Лишние данные отсечены!");
-            Console.WriteLine("Создаю копию файла...");
-
-            File.WriteAllLines(fileInfo.DirectoryName + "cutResult-" + fileInfo.Name, fileLines);
+            using (StreamReader streamReader = new StreamReader(path, Encoding.UTF8, true, 1024))
+            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(Path.GetDirectoryName(path), "cut-" + Path.GetFileName(path))))
+                while ((readLine = streamReader.ReadLine()) != null)
+                    if (progressBar >= startIndex)
+                    {
+                        if (parsePosition == 0)
+                            streamWriter.WriteLine(readLine.Substring(readLine.IndexOf(customChar) + 1));
+                        else
+                            streamWriter.WriteLine(readLine.Substring(0, readLine.IndexOf(customChar)));
+                    }
+                    else
+                    {
+                        progressBar++;
+                        streamWriter.WriteLine(readLine);
+                    }
         }
 
-        private static void AddToFile(int startIndex, string customChar, string path, int mode, string text)
+        private void AddToFile()
         {
             Console.Clear();
 
-            FileInfo fileInfo = new FileInfo(path);
-            Console.WriteLine("Идёт чтение файла...");
-            string[] fileLines = File.ReadAllLines(path);
-            Console.WriteLine("Файл был прочтён!");
-            Console.WriteLine("Начинаю добавление данных...");
+            string readLine;
+            int progressBar = 0;
 
-            switch (mode)
-            {
-                case 0:
-                    for (int i = startIndex; i < fileLines.Length; i++)
-                        if (!string.IsNullOrEmpty(customChar))
-                            fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar), text);
-                        else
-                            fileLines[i] = fileLines[i].Insert(0, text);
-                    break;
-                case 1:
-                    for (int i = startIndex; i < fileLines.Length; i++)
-                        if (!string.IsNullOrEmpty(customChar))
-                            fileLines[i] = fileLines[i].Insert(fileLines[i].IndexOf(customChar) + 1, text);
-                        else
-                            fileLines[i] = fileLines[i].Insert(fileLines[i].Length, text);
-                    break;
-            }
+            Console.WriteLine("Подождите...");
 
-            Console.WriteLine("Данные были добавлены!");
-            Console.WriteLine("Создаю копию файла...");
+            using (StreamReader streamReader = new StreamReader(path, Encoding.UTF8, true, 1024))
+            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(Path.GetDirectoryName(path), "add-" + Path.GetFileName(path))))
+                while ((readLine = streamReader.ReadLine()) != null)
+                    if (progressBar >= startIndex)
+                        switch (parsePosition)
+                        {
+                            case 0:
+                                if (!string.IsNullOrEmpty(customChar))
+                                    streamWriter.WriteLine(readLine.Insert(readLine.IndexOf(customChar), insertText));
+                                else
+                                    streamWriter.WriteLine(readLine.Insert(0, insertText));
+                                break;
+                            case 1:
+                                if (!string.IsNullOrEmpty(customChar))
+                                    streamWriter.WriteLine(readLine.Insert(readLine.IndexOf(customChar) + 1, insertText));
+                                else
+                                    streamWriter.WriteLine(readLine.Insert(readLine.Length, insertText));
+                                break;
+                        }
+                    else
+                    {
+                        progressBar++;
+                        streamWriter.WriteLine(readLine);
+                    }
+        }
 
-            var t = Path.GetDirectoryName(Path.GetFullPath(path));
+        private string StreamFile(string mode)
+        {
+            string readLine;
+            int progressBar = 0;
 
-            File.WriteAllLines(Path.GetDirectoryName(Path.GetFullPath(path)) + "addResult-" + Path.GetFileName(path), fileLines);
+            using (StreamReader streamReader = new StreamReader(File.OpenRead(path), Encoding.UTF8, true, 1024))
+            using (StreamWriter streamWriter = new StreamWriter(Path.Combine(Path.GetDirectoryName(path), "cutResult-" + Path.GetFileName(path))))
+                while ((readLine = streamReader.ReadLine()) != null)
+                {
+                    if (progressBar >= startIndex)
+                        continue;
+                    else
+                    {
+                        progressBar++;
+                        streamWriter.WriteLine(readLine);
+                    }
+                }
+            return string.Empty;
+        }
+
+        private void WriteFile(string pathSourceFile, string resultFileName, string[] allLines)
+        {
+
         }
     }
 }
